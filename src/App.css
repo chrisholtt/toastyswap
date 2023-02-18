@@ -1,38 +1,60 @@
-.App {
-  text-align: center;
+* {
+  padding: 0;
+  margin: 0;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+section {
   display: flex;
+  justify-content: center;
+  align-items: center;
   flex-direction: column;
+}
+
+.wallet-popup {
+  position: absolute;
+  width: 300px;
+  height: 80px;
+  background: wheat;
+  box-shadow: 10px 10px 10px rgba(35, 35, 35, 0.05);
+}
+
+.nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100vw;
+}
+
+.nav-icons {
+  display: flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.nav-icons * {
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.toast-icon {
+  min-height: 30px;
+  height: 40px;
+}
+
+.prize-pool-wrapper {
+  display: flex;
+  margin-top: 10vh;
+}
+
+.priz-pool-card-wrapper {
+  padding: 20px;
+}
+
+.priz-pool-card-wrapper div {
+  padding: 0px;
 }

@@ -1,24 +1,100 @@
-import logo from './logo.svg';
 import './App.css';
+import Web3 from 'web3'
+import React, { useState } from 'react';
+import Navbar from './components/Navbar';
+import { Routes, Route } from 'react-router-dom';
+import PrizePoolPage from './pages/PrizePoolPage';
+import LuckyToastPage from './pages/LuckyToastPage';
+
 
 function App() {
+
+  const toastIcon = require('./images/toasticon.png');
+  const [web3, setWeb3] = useState();
+
+  const [userObj, setUserObj] = useState({
+    isConnected: false,
+    address: "",
+    balance: 0.00
+  });
+
+  const onConnect = async () => {
+    // Trying to connect to web3 provider
+    try {
+      const currentProvider = window.web3.currentProvider;
+      if (currentProvider) {
+        await currentProvider.request({ method: 'eth_requestAccounts' })
+        const web3 = new Web3(currentProvider);
+        setWeb3(web3);
+        // Getting user address
+        const userAccount = await web3.eth.getAccounts();
+        const account = userAccount[0];
+        // Getting native balance
+        let balance = await web3.eth.getBalance(account);
+        const balanceInEther = web3.utils.fromWei(balance, 'ether')
+        handleBalanceUpdate(Number(balanceInEther).toFixed(2));
+        handleUserSignIn(account);
+        connectUser(true);
+        // Create local instance of contracts
+      }
+    } catch (err) {
+      console.log(err);
+      console.log("Failed to connect to web3 provider, try installing MetaMask");
+    }
+  }
+
+  const connectUser = () => {
+    setUserObj((prev) => {
+      return { ...prev, isConnected: true }
+    })
+  }
+
+  const disconnectUser = () => {
+    setUserObj((prev) => {
+      return { ...prev, isConnected: false }
+    })
+  }
+
+  const handleUserSignIn = (address) => {
+    setUserObj((prev) => {
+      return { ...prev, address: address }
+    })
+  }
+
+  const handleBalanceUpdate = (balance) => {
+    setUserObj((prev) => {
+      return { ...prev, balance: balance }
+    })
+  }
+
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <body className="App">
+
+      <section>
+        <Navbar onConnect={onConnect} userObj={userObj} disconnectUser={disconnectUser} />
+      </section>
+
+      <section>
+        <Routes>
+          <Route path="/pools" element={<PrizePoolPage />} />
+          <Route path="/lucky-toast" element={<LuckyToastPage />} />
+
+
+        </Routes>
+
+
+
+      </section>
+
+
+
+
+
+
+
+    </body>
   );
 }
 
