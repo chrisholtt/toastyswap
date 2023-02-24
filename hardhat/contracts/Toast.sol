@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT LICENSE
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
+import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 contract Toast is ERC20, ERC20Burnable, Ownable {
@@ -14,7 +14,7 @@ contract Toast is ERC20, ERC20Burnable, Ownable {
   using SafeMath for uint256;
 
   mapping(address => uint256) private _balances;
-  mapping(address => bool) controllers;
+  mapping(address => bool) public controllers;
   
   uint256 private _totalSupply;
   uint256 private MAXSUP = 0;
@@ -23,7 +23,7 @@ contract Toast is ERC20, ERC20Burnable, Ownable {
 
 
   constructor() ERC20("Toast", "TOAST") { 
-    _mint(msg.sender, 1000000 * 10 * 18);
+    // _mint(msg.sender, 1000000 * 10 * 18);
   }
 
   function mint(address to, uint256 amount) external {

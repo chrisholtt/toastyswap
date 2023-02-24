@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import { Routes, Route } from 'react-router-dom';
 import PrizePoolPage from './pages/PrizePoolPage';
 import LuckyToastPage from './pages/LuckyToastPage';
+import SwapPage from './pages/SwapPage';
 
 
 function App() {
@@ -70,7 +71,7 @@ function App() {
 
 
   return (
-    <body className="App">
+    <body>
 
       <section>
         <Navbar onConnect={onConnect} userObj={userObj} disconnectUser={disconnectUser} />
@@ -78,10 +79,9 @@ function App() {
 
       <section>
         <Routes>
-          <Route path="/pools" element={<PrizePoolPage />} />
-          <Route path="/lucky-toast" element={<LuckyToastPage />} />
-
-
+          <Route path="/Swap" element={<SwapPage />} />
+          <Route path="/Earn" element={<PrizePoolPage />} />
+          <Route path="/Win" element={<LuckyToastPage />} />
         </Routes>
 
 
