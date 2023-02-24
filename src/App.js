@@ -6,6 +6,9 @@ import { Routes, Route } from 'react-router-dom';
 import PrizePoolPage from './pages/PrizePoolPage';
 import LuckyToastPage from './pages/LuckyToastPage';
 import SwapPage from './pages/SwapPage';
+import Web3Modal from 'web3modal';
+import WalletConnectProvider from '@walletconnect/web3-provider';
+import WalletLink from 'walletlink';
 
 
 function App() {
@@ -19,10 +22,40 @@ function App() {
     balance: 0.00
   });
 
+  const providerOptions = {
+    binancechainwallet: {
+      package: true
+    },
+    walletconnect: {
+      package: WalletConnectProvider,
+      options: {
+        infuraId: "a67f2ab200784a88b3d1c4710ae745bb"
+      }
+    },
+    walletlink: {
+      package: WalletLink,
+      options: {
+        appName: "Toasti",
+        infuraId: "a67f2ab200784a88b3d1c4710ae745bb",
+        rpc: "",
+        chainId: 137,
+        appLogoUrl: null,
+        darkMode: true
+      }
+    }
+  }
+
+  const web3Modal = new Web3Modal({
+    network: "polygon",
+    them: "dark",
+    cacheProvider: true,
+    providerOptions
+  })
+
   const onConnect = async () => {
     // Trying to connect to web3 provider
     try {
-      const currentProvider = window.web3.currentProvider;
+      const currentProvider = await web3Modal.connect();
       if (currentProvider) {
         await currentProvider.request({ method: 'eth_requestAccounts' })
         const web3 = new Web3(currentProvider);
