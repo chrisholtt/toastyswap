@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// Inspired by https://solidity-by-example.org/defi/staking-rewards/
 pragma solidity ^0.8.7;
 
 import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -9,39 +10,52 @@ import "./Toast.sol";
 error TransferFailed();
 error NeedsMoreThanZero();
 
-// Call this contract toaster maybe?
 contract ToastStaking is ReentrancyGuard {
+    Toast public s_rewardsToken;
     Toast public s_stakingToken;
+
+    // This is the reward token per second
+    // Which will be multiplied by the tokens the user staked divided by the total
+    // This ensures a steady reward rate of the platform
+    // So the more users stake, the less for everyone who is staking.
+    uint256 public constant REWARD_RATE = 100;
     uint256 public s_lastUpdateTime;
-    uint256 public constant secondsInAYear = 86400 * 365;
-    uint256 public APY = 35;
+    uint256 public s_rewardPerTokenStored;
 
-    struct Stake {
-        uint256 amount;
-        uint256 stakedAt;
-        uint256 rewards;
-        address owner;
-    }
-
-    mapping(address => Stake) public vault;
-    // do this 
-    mapping(address => uint256) totalRewards;
+    mapping(address => uint256) public s_userRewardPerTokenPaid;
+    mapping(address => uint256) public s_rewards;
 
     uint256 private s_totalSupply;
+    mapping(address => uint256) public s_balances;
 
     event Staked(address indexed user, uint256 indexed amount);
     event WithdrewStake(address indexed user, uint256 indexed amount);
     event RewardsClaimed(address indexed user, uint256 indexed amount);
 
-    constructor(Toast stakingToken) {
+    constructor(Toast stakingToken, Toast rewardsToken) {
         s_stakingToken = stakingToken;
+        s_rewardsToken = rewardsToken;
+    }
+
+    /**
+     * @notice How much reward a token gets based on how long it's been in and during which "snapshots"
+     */
+    function rewardPerToken() public view returns (uint256) {
+        if (s_totalSupply == 0) {
+            return s_rewardPerTokenStored;
+        }
+        return
+            s_rewardPerTokenStored + ((block.timestamp - s_lastUpdateTime) * REWARD_RATE * 1e18);
+            // (((block.timestamp - s_lastUpdateTime) * REWARD_RATE * 1e18) / s_totalSupply);
     }
 
     /**
      * @notice How much reward a user has earned
      */
     function earned(address account) public view returns (uint256) {
-        return vault[account].amount * ((((block.timestamp - vault[account].stakedAt) / secondsInAYear) * 1e18 * APY) / 100);            
+        return
+            ((s_balances[account] * (rewardPerToken() - s_userRewardPerTokenPaid[account])) /
+                1e18) + s_rewards[account];
     }
 
     /**
@@ -55,13 +69,7 @@ contract ToastStaking is ReentrancyGuard {
         moreThanZero(amount)
     {
         s_totalSupply += amount;
-        vault[msg.sender] = Stake({
-            amount: vault[msg.sender].amount += amount,
-            stakedAt: block.timestamp,
-            rewards: vault[msg.sender].rewards,
-            owner: msg.sender
-        });
-
+        s_balances[msg.sender] += amount;
         emit Staked(msg.sender, amount);
         bool success = s_stakingToken.transferFrom(msg.sender, address(this), amount);
         if (!success) {
@@ -75,7 +83,7 @@ contract ToastStaking is ReentrancyGuard {
      */
     function withdraw(uint256 amount) external updateReward(msg.sender) nonReentrant {
         s_totalSupply -= amount;
-        vault[msg.sender].amount -= amount;
+        s_balances[msg.sender] -= amount;
         emit WithdrewStake(msg.sender, amount);
         bool success = s_stakingToken.transfer(msg.sender, amount);
         if (!success) {
@@ -87,14 +95,15 @@ contract ToastStaking is ReentrancyGuard {
      * @notice User claims their tokens
      */
     function claimReward() external updateReward(msg.sender) nonReentrant {
-        uint256 reward = vault[msg.sender].rewards;
-        // Been fucking around with this
-        reward = reward / 1e18;
-        //
-        vault[msg.sender].rewards = 0;
+        uint256 reward = s_rewards[msg.sender];
+        s_rewards[msg.sender] = 0;
         emit RewardsClaimed(msg.sender, reward);
-        s_stakingToken.mint(address(this), reward);
-        bool success = s_stakingToken.transfer(msg.sender, reward);
+
+        // Ive added this bit
+        s_rewardsToken.mint(address(this), reward);
+        //
+        
+        bool success = s_rewardsToken.transfer(msg.sender, reward);
         if (!success) {
             revert TransferFailed();
         }
@@ -104,8 +113,10 @@ contract ToastStaking is ReentrancyGuard {
     /* Modifiers Functions */
     /********************/
     modifier updateReward(address account) {
+        s_rewardPerTokenStored = rewardPerToken();
         s_lastUpdateTime = block.timestamp;
-        vault[account].rewards = earned(account);
+        s_rewards[account] = earned(account);
+        s_userRewardPerTokenPaid[account] = s_rewardPerTokenStored;
         _;
     }
 
@@ -123,6 +134,6 @@ contract ToastStaking is ReentrancyGuard {
     // But, for the purpose of this demo, we've left them public for simplicity.
 
     function getStaked(address account) public view returns (uint256) {
-        return vault[account].amount;
+        return s_balances[account];
     }
 }

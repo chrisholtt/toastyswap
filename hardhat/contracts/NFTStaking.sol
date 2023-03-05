@@ -8,6 +8,8 @@ import "./NFT.sol";
 contract NFTStaking is Ownable, IERC721Receiver {
 
   uint256 public totalStaked;
+  address public admin;
+  uint256 public rewardRatePerDay = 1;
   
   // struct to store a stake's token, owner, and earning values
   struct Stake {
@@ -27,9 +29,15 @@ contract NFTStaking is Ownable, IERC721Receiver {
   // maps tokenId to stake
   mapping(uint256 => Stake) public vault; 
 
-   constructor(NFT _nft, Toast _token) { 
+  constructor(NFT _nft, Toast _token) { 
     nft = _nft;
     token = _token;
+    admin = msg.sender;
+  }
+
+  function updateRewardRatePerDay(uint256 number) external {
+    require(msg.sender == admin, "Only admin can update the reward rate");
+    rewardRatePerDay = number;
   }
 
   function stake(uint256[] calldata tokenIds) external {
@@ -69,6 +77,7 @@ contract NFTStaking is Ownable, IERC721Receiver {
       _claim(msg.sender, tokenIds, false);
   }
 
+
   function claimForAddress(address account, uint256[] calldata tokenIds) external {
       _claim(account, tokenIds, false);
   }
@@ -87,8 +96,8 @@ contract NFTStaking is Ownable, IERC721Receiver {
       Stake memory staked = vault[tokenId];
       require(staked.owner == account, "not an owner");
       uint256 stakedAt = staked.timestamp;
-      rewardmath = 100 ether * (block.timestamp - stakedAt) / 86400;
-      earned = rewardmath / 100;
+      rewardmath = rewardRatePerDay * ((block.timestamp - stakedAt) / 86400);
+      earned += rewardmath;
       vault[tokenId] = Stake({
         owner: account,
         tokenId: uint24(tokenId),
@@ -97,7 +106,7 @@ contract NFTStaking is Ownable, IERC721Receiver {
 
     }
     if (earned > 0) {
-      earned = earned / 10;
+      earned = earned;
       token.mint(account, earned);
     }
     if (_unstake) {
@@ -106,17 +115,21 @@ contract NFTStaking is Ownable, IERC721Receiver {
     emit Claimed(account, earned);
   }
 
-  function earningInfo(uint256[] calldata tokenIds) external view returns (uint256[2] memory info) {
+  function earningInfo(uint256[] calldata tokenIds) external view returns (uint256 info) {
      uint256 tokenId;
-     uint256 totalScore = 0;
+     uint256 rewardmath = 0;
      uint256 earned = 0;
+
+      for (uint i = 0; i < tokenIds.length; i++) {
+      tokenId = tokenIds[i];
       Stake memory staked = vault[tokenId];
+      require(staked.owner == msg.sender, "not an owner");
       uint256 stakedAt = staked.timestamp;
-      earned += 100000 ether * (block.timestamp - stakedAt) / 1 days;
-    uint256 earnRatePerSecond = totalScore * 1 ether / 1 days;
-    earnRatePerSecond = earnRatePerSecond / 100000;
-    // earned, earnRatePerSecond
-    return [earned, earnRatePerSecond];
+      rewardmath = rewardRatePerDay * ((block.timestamp - stakedAt) / 86400);
+      earned += rewardmath;
+      }
+
+    return earned;
   }
 
   // should never be used inside of transaction because of gas fee

@@ -13,10 +13,12 @@ contract NFT is ERC721Enumerable, Ownable {
     string public baseExtension = ".json";
     uint256 public maxSupply = 10000;
     uint256 public maxMintAmount = 100;
+    address public admin;
     bool public paused = false;
 
-    constructor() ERC721("Toasti", "TOASTI") {}
-
+    constructor() ERC721("Toasti", "TOASTI") {
+        admin = msg.sender;
+    }
 
     function _baseURI() internal view virtual override returns (string memory) {
     return "ipfs://QmYB5uWZqfunBq7yWnamTqoXWBAHiQoirNLmuxMzDThHhi/";
@@ -25,8 +27,13 @@ contract NFT is ERC721Enumerable, Ownable {
     
     function mint(address _to, uint256 _mintAmount) public payable {
             uint256 supply = totalSupply();
-            require(!paused);
-            require(_mintAmount > 0);
+
+            if (msg.sender != admin) {
+                require(msg.value >= 0.1 ether, "You need to provide 0.1 ether");
+            }
+
+            require(!paused, "Minting is paused");
+            require(_mintAmount > 0, "Mint amount must be greater than 0");
             require(_mintAmount <= maxMintAmount, "Can only mint 100 NFT's per txn");
             require(supply + _mintAmount < maxSupply, "Cannot mint over maximum supply");
             

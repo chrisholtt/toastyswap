@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react'
 
-const WalletConnect = ({ userObj, onConnect }) => {
+const WalletConnect = ({ onConnect }) => {
 
-    useEffect(() => {
-
-    }, [userObj])
 
     return (
-        <button onClick={() => { onConnect() }}>CONNECTED</button>
+        <button onClick={() => { onConnect() }}>CONNECT</button>
     )
 
 }

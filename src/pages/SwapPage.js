@@ -1,11 +1,12 @@
-import React from 'react'
+import React from 'react';
+import Banner from '../components/Banner';
 
 
 const SwapPage = () => {
     return (
-        <div className="prize-pool-wrapper">
-            <h1>swap page</h1>
-        </div>
+        <>
+            <Banner heading={'Swap'} subheading={'Swap any tokens on any chain'} />
+        </>
     )
 }
 

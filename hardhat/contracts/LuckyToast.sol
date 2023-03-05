@@ -10,11 +10,12 @@ error TransferFailed();
 error NeedsMoreThanZero();
 
 // Call this contract toaster maybe?
-contract ToastStaking is ReentrancyGuard {
+contract LuckyToast is ReentrancyGuard {
     Toast public s_stakingToken;
     uint256 public s_lastUpdateTime;
     uint256 public constant secondsInAYear = 86400 * 365;
     uint256 public APY = 35;
+    uint256 public game = 1;
 
     struct Stake {
         uint256 amount;
@@ -24,8 +25,17 @@ contract ToastStaking is ReentrancyGuard {
     }
 
     mapping(address => Stake) public vault;
-    // do this 
-    mapping(address => uint256) totalRewards;
+
+    struct Game {
+        uint256 game;
+        uint256 tvl;
+        address winner;
+        uint256 startAt;
+        uint256 endAt;
+        Stake[] players;
+    }
+
+    mapping(uint256 => Game) public games;
 
     uint256 private s_totalSupply;
 
@@ -55,12 +65,31 @@ contract ToastStaking is ReentrancyGuard {
         moreThanZero(amount)
     {
         s_totalSupply += amount;
+
+        // Create instance of users stake
         vault[msg.sender] = Stake({
             amount: vault[msg.sender].amount += amount,
             stakedAt: block.timestamp,
             rewards: vault[msg.sender].rewards,
             owner: msg.sender
         });
+
+
+        // Enter them into the game
+        games[game] = Game({
+            game: game,
+            tvl: games[game].tvl += amount,
+            winner: address(0x0),
+            startAt: block.timestamp, // this needs fixed
+            endAt: block.timestamp,
+            players: games[game] += 1
+
+
+        });
+
+
+
+
 
         emit Staked(msg.sender, amount);
         bool success = s_stakingToken.transferFrom(msg.sender, address(this), amount);

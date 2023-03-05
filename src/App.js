@@ -3,17 +3,17 @@ import Web3 from 'web3'
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import { Routes, Route } from 'react-router-dom';
-import PrizePoolPage from './pages/PrizePoolPage';
-import LuckyToastPage from './pages/LuckyToastPage';
+import Earn from './pages/EarnPage';
+import Win from './pages/WinPage';
 import SwapPage from './pages/SwapPage';
 import Web3Modal from 'web3modal';
 import WalletConnectProvider from '@walletconnect/web3-provider';
 import WalletLink from 'walletlink';
 
 
+
 function App() {
 
-  const toastIcon = require('./images/toasticon.png');
   const [web3, setWeb3] = useState();
 
   const [userObj, setUserObj] = useState({
@@ -108,13 +108,15 @@ function App() {
 
       <section>
         <Navbar onConnect={onConnect} userObj={userObj} disconnectUser={disconnectUser} />
+        <button onClick={() => web3Modal.clearCachedProvider()}>clear</button>
       </section>
 
       <section>
         <Routes>
           <Route path="/Swap" element={<SwapPage />} />
-          <Route path="/Earn" element={<PrizePoolPage />} />
-          <Route path="/Win" element={<LuckyToastPage />} />
+          <Route path="/Earn" element={<Earn />} />
+          <Route path="/Win" element={<Win />} />
+          <Route path="/Buy" element={<Win />} />
         </Routes>
 
 
