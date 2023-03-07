@@ -5,6 +5,13 @@
   font-family: 'Roboto', sans-serif;
 }
 
+.swap-box {
+  width: 60vw;
+  height: 40vh;
+  background: red;
+  border-radius: 10px;
+}
+
 .pool {
   display: flex;
   width: 100%;

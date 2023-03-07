@@ -20,7 +20,6 @@ contract LuckyToast is ReentrancyGuard {
     struct Stake {
         uint256 amount;
         uint256 stakedAt;
-        uint256 rewards;
         address owner;
     }
 
@@ -32,10 +31,14 @@ contract LuckyToast is ReentrancyGuard {
         address winner;
         uint256 startAt;
         uint256 endAt;
-        Stake[] players;
+        mapping(address => Stake) vault;
+        address payable[] players;
+        mapping (address => bool) isInGame;
     }
 
     mapping(uint256 => Game) public games;
+
+    enum GameState{ START, ACTIVE, ENDED }
 
     uint256 private s_totalSupply;
 
@@ -64,39 +67,64 @@ contract LuckyToast is ReentrancyGuard {
         nonReentrant
         moreThanZero(amount)
     {
+
         s_totalSupply += amount;
 
         // Create instance of users stake
-        vault[msg.sender] = Stake({
+        Stake memory _stake = Stake({
             amount: vault[msg.sender].amount += amount,
             stakedAt: block.timestamp,
-            rewards: vault[msg.sender].rewards,
             owner: msg.sender
         });
+        vault[msg.sender] = _stake;
 
+        // First player starts each game
+        if(games[game].players.length == 0) {
+        games[game].startAt = block.timestamp;
+        games[game].game = game;
+        }
 
-        // Enter them into the game
-        games[game] = Game({
-            game: game,
-            tvl: games[game].tvl += amount,
-            winner: address(0x0),
-            startAt: block.timestamp, // this needs fixed
-            endAt: block.timestamp,
-            players: games[game] += 1
+        games[game].tvl += amount;
+        games[game].vault[address(msg.sender)] = _stake;
 
-
-        });
-
-
-
-
+        // Push to player array if not exists
+        if (!games[game].isInGame[msg.sender]) {
+            games[game].players.push(payable(msg.sender));
+        }
+        games[game].isInGame[msg.sender] = true;
 
         emit Staked(msg.sender, amount);
         bool success = s_stakingToken.transferFrom(msg.sender, address(this), amount);
         if (!success) {
             revert TransferFailed();
         }
+
+        // If game has been live for 1 hour then pick winner 
+        if (block.timestamp - games[game].startAt >= 3600) {
+            pickWinner(address(msg.sender));
+        }
     }
+
+    function pickWinner(address _sender) internal {
+        require(block.timestamp - games[game].startAt >= 3600, "Current game needs to run for 1 hour");
+        // Mint toast for payout
+        uint256 reward = s_totalSupply * ((((block.timestamp - games[game].startAt) / secondsInAYear) * 1e18 * APY) / 100);
+        s_stakingToken.mint(address(this), reward);
+
+        // Get random number
+        uint randomNumber = uint(keccak256(abi.encodePacked(_sender, block.timestamp))) % games[game].players.length;
+        address winner = games[game].players[randomNumber];
+        bool success = s_stakingToken.transfer(winner, reward);
+        if (!success) {
+            revert TransferFailed();
+        }
+
+        games[game].endAt = block.timestamp;
+        games[game].winner = winner;
+        game++;
+
+    }
+
 
     /**
      * @notice Withdraw tokens from this contract
@@ -105,6 +133,19 @@ contract LuckyToast is ReentrancyGuard {
     function withdraw(uint256 amount) external updateReward(msg.sender) nonReentrant {
         s_totalSupply -= amount;
         vault[msg.sender].amount -= amount;
+
+        games[game].tvl -= amount;
+        games[game].vault[msg.sender] = vault[msg.sender];
+        games[game].isInGame[msg.sender] = false;
+        
+        // This function moves the desired element to the end the pops it.
+        for(uint256 i = 0; i < games[game].players.length; i++) {
+            if(games[game].players[i] != msg.sender){
+                games[game].players[i] = games[game].players[games[game].players.length - 1];
+                games[game].players.pop();
+            }
+        }
+
         emit WithdrewStake(msg.sender, amount);
         bool success = s_stakingToken.transfer(msg.sender, amount);
         if (!success) {
@@ -115,26 +156,26 @@ contract LuckyToast is ReentrancyGuard {
     /**
      * @notice User claims their tokens
      */
-    function claimReward() external updateReward(msg.sender) nonReentrant {
-        uint256 reward = vault[msg.sender].rewards;
-        // Been fucking around with this
-        reward = reward / 1e18;
-        //
-        vault[msg.sender].rewards = 0;
-        emit RewardsClaimed(msg.sender, reward);
-        s_stakingToken.mint(address(this), reward);
-        bool success = s_stakingToken.transfer(msg.sender, reward);
-        if (!success) {
-            revert TransferFailed();
-        }
-    }
+
+    // function claimReward() external updateReward(msg.sender) nonReentrant {
+    //     uint256 reward = vault[msg.sender].rewards;
+    //     // Been fucking around with this
+    //     reward = reward / 1e18;
+    //     //
+    //     vault[msg.sender].rewards = 0;
+    //     emit RewardsClaimed(msg.sender, reward);
+    //     s_stakingToken.mint(address(this), reward);
+    //     bool success = s_stakingToken.transfer(msg.sender, reward);
+    //     if (!success) {
+    //         revert TransferFailed();
+    //     }
+    // }
 
     /********************/
     /* Modifiers Functions */
     /********************/
     modifier updateReward(address account) {
         s_lastUpdateTime = block.timestamp;
-        vault[account].rewards = earned(account);
         _;
     }
 
@@ -153,5 +194,21 @@ contract LuckyToast is ReentrancyGuard {
 
     function getStaked(address account) public view returns (uint256) {
         return vault[account].amount;
+    }
+
+    function getTVL() public view returns(uint256) {
+        return s_totalSupply;
+    }
+
+    function getGameNumber() public view returns(uint256) {
+        return game;
+    }
+
+    function getPlayers(uint256 _game) public view returns(address payable[] memory _players) {
+        return games[_game].players;
+    }
+
+    function getPlayersStakeInGame(uint256 _game, address _player) public view returns(Stake memory players) {
+        return games[_game].vault[_player];
     }
 }
