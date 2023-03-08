@@ -38,7 +38,7 @@ function App() {
         appName: "Toasti",
         infuraId: "a67f2ab200784a88b3d1c4710ae745bb",
         rpc: "",
-        chainId: 137,
+        chainId: 1,
         appLogoUrl: null,
         darkMode: true
       }

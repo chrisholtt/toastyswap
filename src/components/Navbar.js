@@ -1,8 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import WalletConnect from './WalletConnect';
-import WalletConnected from './WalletConnected';
-import WalletDropDown from './WalletDropDown';
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
@@ -11,14 +8,14 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
+import jazzicon from "@metamask/jazzicon";
 
 const Navbar = ({ onConnect, userObj }) => {
-    const [showWalletDropDown, setShowWalletDropDown] = useState(false);
     const [open, setOpen] = useState(false);
     const anchorRef = useRef(null);
-    // const toastIcon = require('../images/toast.svg').default;
+    const toastIcon = require('../images/toastIcon.png').default;
 
-    const options = ['Create a merge commit', 'Squash and merge', 'Rebase and merge'];
+    const options = [`${userObj.address[0]}${userObj.address[1]}${userObj.address[2]}${userObj.address[3]}...${userObj.address[userObj.address.length - 4]}${userObj.address[userObj.address.length - 3]}${userObj.address[userObj.address.length - 2]}${userObj.address[userObj.address.length - 1]}`, 'Squash and merge', 'Rebase and merge'];
     const [selectedIndex, setSelectedIndex] = React.useState(1);
 
     const handleToggle = () => {
@@ -46,12 +43,12 @@ const Navbar = ({ onConnect, userObj }) => {
         }
     }
 
+
     return (
         <>
             <div className="nav">
                 <div className='nav-icons'>
-                    {/* <img src={toastIcon} alt="toast-icon" className='toast-icon' /> */}
-
+                    <img src={toastIcon} alt="toast-icon" className='toast-icon' />
                     <li><NavLink to="/" className="navlink" style={{ textDecoration: 'none', display: "flex", alignItems: "center", color: "#000000" }}><h1>TOASTI</h1></NavLink></li>
                     <li><NavLink to="/Swap" className="navlink" style={{ textDecoration: 'none', display: "flex", alignItems: "center", color: "#000000" }}><h2>Swap</h2></NavLink></li>
                     <li><NavLink to="/Earn" className="navlink" style={{ textDecoration: 'none', display: "flex", alignItems: "center", color: "#000000" }}><h2>Earn</h2></NavLink></li>
@@ -59,7 +56,7 @@ const Navbar = ({ onConnect, userObj }) => {
                     <li><NavLink to="/Buy" className="navlink" style={{ textDecoration: 'none', display: "flex", alignItems: "center", color: "#000000" }}><h2>Buy Crypto</h2></NavLink></li>
                 </div>
 
-                <ButtonGroup variant="contained" ref={anchorRef} aria-label="split button">
+                <ButtonGroup variant="contained" ref={anchorRef} aria-label="split button" >
                     <Button onClick={handleConnect}>{userObj.isConnected ? 'Connected' : 'Connect'}</Button>
                     <Button
                         size="small"
@@ -96,9 +93,10 @@ const Navbar = ({ onConnect, userObj }) => {
                                         {options.map((option, index) => (
                                             <MenuItem
                                                 key={option}
-                                                disabled={index === 2}
+                                                disabled={index === 0}
                                                 selected={index === selectedIndex}
                                                 onClick={(event) => handleMenuItemClick(event, index)}
+                                                style={{ color: 'black' }}
                                             >
                                                 {option}
                                             </MenuItem>
